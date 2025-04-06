@@ -1,0 +1,8 @@
+prefix=/home/catkin_ws/devel
+
+Name: seance2
+Description: Description of seance2
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

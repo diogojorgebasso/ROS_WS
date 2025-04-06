@@ -13,8 +13,6 @@ class TurtleController:
         self.pose_sub = rospy.Subscriber('/turtle1/pose', Pose, self.pose_callback)
         
         self.radius = 0.75 
-        self.obstacle_X = 3
-        self.obstacle_Y = 3
 
         self.current_x = 0.0
         self.current_y = 0.0
@@ -62,47 +60,24 @@ class TurtleController:
         return angle
     
     def move_to_target(self, x, y):
-        # Set the new target
         self.target_x = x
         self.target_y = y
 
         while not rospy.is_shutdown():
             distance = self.get_distance_to_target()
             angle = self.normalize_angle(self.get_angle_to_target())
-            distance_obstacle = math.sqrt((self.obstacle_X - self.current_x) ** 2 +
-                                          (self.obstacle_Y - self.current_y) ** 2)
                                                              
             cmd_vel = Twist()
-
-            # Check if an obstacle is too close
-            distance_tolerance_obstacle = 1.0
-            if distance_obstacle < distance_tolerance_obstacle:
-                rospy.loginfo(f"Obstacle detected! x: {self.obstacle_X}, y: {self.obstacle_Y}")
-                rospy.loginfo("Contouring obstacle")
-                
-                # Calculate avoidance parameters
-                avoidance_angular_speed = self.linear_speed / self.radius
-                # Duration for a 180 degree (pi radians) turn along the semicircular path
-                duration = math.pi / avoidance_angular_speed
-                t0 = rospy.Time.now().to_sec()
-
-                while (rospy.Time.now().to_sec() - t0) < duration and not rospy.is_shutdown():
-                    cmd_vel.linear.x = self.linear_speed
-                    cmd_vel.angular.z = avoidance_angular_speed
-                    self.vel_pub.publish(cmd_vel)
-                    self.rate.sleep()
-                continue
             
-            # If the target is reached, stop
+            
             if distance < self.distance_tolerance:
                 rospy.loginfo(f"Target reached! x: {self.target_x}, y: {self.target_y}")
                 cmd_vel.linear.x = 0.0
                 cmd_vel.angular.z = 0.0
                 self.vel_pub.publish(cmd_vel)
                 break
-            
-            # Otherwise, adjust the turtle's heading and movement toward the target
-            if abs(angle) > 0.5:
+
+            if abs(angle) > 0.2:
                 cmd_vel.angular.z = self.angular_speed * (angle / abs(angle))
                 cmd_vel.linear.x = 0.0  # Turn in place if the angle is too large
             else:
